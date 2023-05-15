@@ -282,8 +282,8 @@ mod tests {
     use super::*;
     use merlin::Transcript;
     use rand::SeedableRng;
-    use super::rand::rngs::StdRng;
     use std::collections::HashSet;
+    use rand::rngs::StdRng;
 
     #[test]
     fn test_optmz_sparse_merkle_tree() {

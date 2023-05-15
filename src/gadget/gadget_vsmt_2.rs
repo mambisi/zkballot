@@ -212,9 +212,9 @@ mod tests {
     use merlin::Transcript;
     use curve25519_dalek::constants::BASEPOINT_ORDER;
     use rand::SeedableRng;
-    use super::rand::rngs::StdRng;
     // For benchmarking
     use std::time::{Duration, Instant};
+    use rand::rngs::StdRng;
 
     #[test]
     fn test_vanilla_sparse_merkle_tree() {

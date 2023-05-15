@@ -237,7 +237,7 @@ pub fn get_scalar_from_hex(hex_str: &str) -> Result<Scalar, DecodeHexError> {
 mod tests {
     use super::*;
     use curve25519_dalek::constants::BASEPOINT_ORDER;
-    use crate::gadget_vsmt_2::TreeDepth;
+    use crate::gadget::gadget_vsmt_2::TreeDepth;
 
     #[test]
     fn test_shl_shr() {

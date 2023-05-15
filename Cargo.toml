@@ -6,15 +6,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bulletproofs = {version = "4.0.0", features = ["std", "avx2_backend", "yoloproofs"]}
-curve25519-dalek = { package = "curve25519-dalek-ng", version = "4" , default-features = false, features = ["u64_backend", "nightly", "serde", "alloc"] }
+bulletproofs = { path = "system/bulletproofs", features = ["std", "avx2_backend", "yoloproofs"] }
+curve25519-dalek = { package = "curve25519-dalek-ng", version = "4", default-features = false, features = ["u64_backend", "nightly", "serde", "alloc"] }
 subtle = { version = "2", default-features = false }
 sha3 = { version = "0.10.7", default-features = false }
 digest = { version = "0.10.6", default-features = false }
 rand_core = { version = "0.6.4", default-features = false, features = ["alloc"] }
-rand = { version = "0.8.5", default-features = false, features =["std"] }
+rand = { version = "0.8.5", default-features = false, features = ["std"] }
 byteorder = { version = "1", default-features = false }
 serde = { version = "1", default-features = false, features = ["alloc"] }
 serde_derive = { version = "1", default-features = false }
 thiserror = { version = "1", optional = true }
 merlin = { version = "3.0.0", default-features = false }
+
+[workspace]
+members = ["./", "system/bulletproofs"]

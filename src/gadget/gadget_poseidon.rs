@@ -93,8 +93,9 @@ impl PoseidonParams {
 fn simplify_lc(lc: LinearCombination) -> LinearCombination {
     // TODO: Move this code to the fork of bulletproofs
     let mut vars: HashMap<Variable, Scalar> = HashMap::new();
-    for (var, val) in lc {
-        *vars.entry(var).or_insert(Scalar::zero()) += val;
+    let terms = lc.get_terms();
+    for (var, val) in terms {
+        *vars.entry(*var).or_insert(Scalar::zero()) += val;
     }
 
     let mut new_lc_terms = vec![];

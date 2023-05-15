@@ -79,9 +79,9 @@ mod tests {
     use super::*;
     // For benchmarking
     use std::time::{Duration, Instant};
+    use rand::rngs::StdRng;
     //use rand_chacha::ChaChaRng;
     use rand::SeedableRng;
-    use super::rand::rngs::StdRng;
 
     #[test]
     fn test_mimc() {

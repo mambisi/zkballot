@@ -182,6 +182,25 @@ impl<'g, T: BorrowMut<Transcript>> ConstraintSystem for Prover<'g, T> {
         // (e.g. that variables are valid, that the linear combination evals to 0 for prover, etc).
         self.constraints.push(lc);
     }
+
+    fn evaluate_lc(&self, lc: &LinearCombination) -> Option<Scalar> {
+        Some(self.eval(lc))
+    }
+
+    fn allocate_single(
+        &mut self,
+        assignment: Option<Scalar>,
+    ) -> Result<(Variable, Option<Variable>), R1CSError> {
+        let var = self.allocate(assignment)?;
+        match var {
+            Variable::MultiplierLeft(i) => Ok((Variable::MultiplierLeft(i), None)),
+            Variable::MultiplierRight(i) => Ok((
+                Variable::MultiplierRight(i),
+                Some(Variable::MultiplierOutput(i)),
+            )),
+            _ => Err(R1CSError::FormatError),
+        }
+    }
 }
 
 impl<'g, T: BorrowMut<Transcript>> RandomizableConstraintSystem for Prover<'g, T> {
@@ -226,6 +245,17 @@ impl<'g, T: BorrowMut<Transcript>> ConstraintSystem for RandomizingProver<'g, T>
 
     fn constrain(&mut self, lc: LinearCombination) {
         self.prover.constrain(lc)
+    }
+
+    fn evaluate_lc(&self, lc: &LinearCombination) -> Option<Scalar> {
+        self.prover.evaluate_lc(lc)
+    }
+
+    fn allocate_single(
+        &mut self,
+        assignment: Option<Scalar>,
+    ) -> Result<(Variable, Option<Variable>), R1CSError> {
+        self.prover.allocate_single(assignment)
     }
 }
 
@@ -726,5 +756,13 @@ impl<'g, T: BorrowMut<Transcript>> Prover<'g, T> {
             ipp_proof,
         };
         Ok((proof, self.transcript))
+    }
+
+    pub fn num_constraints(&self) -> usize {
+        self.constraints.len()
+    }
+
+    pub fn num_multipliers(&self) -> usize {
+        self.secrets.a_O.len()
     }
 }

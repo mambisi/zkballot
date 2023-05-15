@@ -26,7 +26,7 @@ mod tests {
         let min = 10;
         let max = 100;
 
-        let v = rng.gen_range(min, max);
+        let v = rng.gen_range(min..max);
         println!("v is {}", &v);
         assert!(range_proof_helper(v, min, max).is_ok());
     }

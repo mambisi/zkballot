@@ -25,7 +25,7 @@ mod tests {
     use curve25519_dalek::ristretto::CompressedRistretto;
 
 
-    fn prover_prep<R: RngCore + CryptoRng>(prover: &mut Prover, values: Vec<Scalar>, rng: &mut R) -> (Vec<CompressedRistretto>, Vec<AllocatedScalar>) {
+    fn prover_prep<T: std::borrow::BorrowMut<Transcript>, R: RngCore + CryptoRng>(prover: &mut Prover<T>, values: Vec<Scalar>, rng: &mut R) -> (Vec<CompressedRistretto>, Vec<AllocatedScalar>) {
         let mut commitments = vec![];
         let mut allocations = vec![];
         for v in values {

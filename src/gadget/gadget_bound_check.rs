@@ -126,7 +126,7 @@ mod tests {
 
     fn bound_check(min: u64, max: u64, bit_size: usize) {
         let mut rng = rand::thread_rng();
-        let v = rng.gen_range(min, max);
+        let v = rng.gen_range(min..max);
         println!("v is {}", &v);
         let randomness = Some(Scalar::random(&mut rng));
 
