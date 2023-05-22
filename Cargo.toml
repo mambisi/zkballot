@@ -19,7 +19,7 @@ serde_derive = { version = "1", default-features = false }
 bincode = { version = "2.0.0-rc.3", features = ["serde"] }
 thiserror = { version = "1", optional = true }
 merlin = { version = "3.0.0", default-features = false }
-primitive-types = { version = "0.12.1", default-features = false}
+primitive-types = { version = "0.12.1", default-features = false, features = ["serde"]}
 k256 = { version = "0.11.4", features = ["ecdsa-core", "ecdsa", "keccak256"] }
 sha2 = { version = "0.10.6", default-features = false, features = ["oid", "asm-aarch64", "asm"] }
 anyhow = "1.0.71"

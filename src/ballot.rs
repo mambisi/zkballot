@@ -11,7 +11,7 @@ use digest::{Digest, FixedOutput};
 use primitive_types::H256;
 use rand_core::RngCore;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub const ELECTION: &'static [u8] = b"Election";
 
@@ -40,8 +40,7 @@ impl Election {
             voters,
             options,
             ballot: Ballot {
-                casters: vec![],
-                votes: vec![],
+                votes: Default::default(),
             },
             pc_gens,
             bp_gens,
@@ -55,7 +54,7 @@ impl Election {
         let value = Scalar::from_bits(pubkey.hash().to_fixed_bytes());
         let voter_id = self.gen_proof_of_set_membership(value)?;
         self.invalidate.insert(pubkey.hash());
-        return Ok(voter_id)
+        return Ok(voter_id);
     }
 
     fn gen_proof_of_set_membership(&self, value: Scalar) -> anyhow::Result<VoterID> {
@@ -91,21 +90,40 @@ impl Election {
         let voter_id_encoded =
             bincode::serde::encode_to_vec(&voter_id, bincode::config::standard())?;
         let voter_id_hash = H256::from(sha3(&voter_id_encoded));
-        assert!(!self.gen_p.contains(&voter_id_hash));
+        assert!(!self.invalidate.contains(&voter_id_hash));
 
         // Verify Vote
         assert!(self.verify_proof_of_set_membership(voter_id).is_ok());
 
         // Register Vote
-        self.gen_p.insert(voter_id_hash);
+        self.invalidate.insert(voter_id_hash);
 
-        // Generate proof of inclusion of votes
+        self.ballot.votes.insert(Vote {
+            candidate,
+            voter_id: voter_id_hash,
+        });
+
+        Ok(())
+    }
+
+    pub fn get_results(&self) -> HashMap<&String, usize> {
+        let mut res = HashMap::new();
+
+        for o in &self.options {
+            res.insert(o, 0_usize);
+        }
+
+        for vote in &self.ballot.votes {
+            let mut vote_count = res.get_mut(&self.options[vote.candidate]).unwrap();
+            *vote_count += 1;
+        }
+
+        res
     }
 }
 
 pub struct Ballot {
-    casters: Vec<H256>,
-    votes: Vec<Vote>,
+    votes: HashSet<Vote>,
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VoterID {
@@ -113,9 +131,10 @@ pub struct VoterID {
     commitments: Vec<CompressedRistretto>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Hash, PartialOrd, PartialEq, Ord, Eq)]
 pub struct Vote {
     candidate: usize,
-    voter_id: VoterID,
+    voter_id: H256,
 }
 
 pub fn sha3(input: &[u8]) -> H256 {
@@ -154,18 +173,9 @@ mod test {
             .get_voter_id(alice.secret.sign(b"voter").unwrap())
             .unwrap();
 
-        let result = bincode::serde::encode_to_vec(&voter_id, bincode::config::standard()).unwrap();
+        election.vote(0, voter_id).unwrap();
 
-        let voter_id_2 = election
-            .get_voter_id(alice.secret.sign(b"voter").unwrap())
-            .unwrap();
 
-        let result_2 =
-            bincode::serde::encode_to_vec(&voter_id_2, bincode::config::standard()).unwrap();
-
-        let hasher = sha2::Sha256::default();
-
-        println!("{:?}", hex::encode(sha3(&result)));
-        println!("{:?}", hex::encode(sha3(&result_2)));
+        println!("{:?}", election.get_results());
     }
 }
