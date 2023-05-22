@@ -8,7 +8,7 @@ use bulletproofs::r1cs::LinearCombination;
 use merlin::Transcript;
 use rand::{RngCore, CryptoRng};
 
-use crate::gadget::r1cs_utils::{AllocatedQuantity, constrain_lc_with_scalar};
+use crate::gadget::r1cs_utils::{AllocatedQuantity, AllocatedScalar, constrain_lc_with_scalar};
 
 // Ensure `v` is a bit, hence 0 or 1
 pub fn bit_gadget<CS: ConstraintSystem>(
@@ -55,9 +55,9 @@ pub fn vector_sum_gadget<CS: ConstraintSystem>(
 // Ensure items[i] * vector[i] = vector[i] * value
 pub fn vector_product_gadget<CS: ConstraintSystem>(
     cs: &mut CS,
-    items: &[u64],
+    items: &[Scalar],
     vector: &[AllocatedQuantity],
-    value: &AllocatedQuantity
+    value: &AllocatedScalar
 ) -> Result<(), R1CSError> {
     let mut constraints = vec![(value.variable, -Scalar::one())];
 
@@ -88,7 +88,7 @@ pub fn vector_product_gadget<CS: ConstraintSystem>(
 /// and prove that each element is either 0 or 1, sum of elements of this bitmap is 1 (as there is only 1 element)
 /// and the relation set[i] * bitmap[i] = bitmap[i] * value.
 /// Taken from https://github.com/HarryR/ethsnarks/blob/master/src/gadgets/one_of_n.hpp
-pub fn gen_proof_of_set_membership<R: RngCore + CryptoRng>(value: u64, randomness: Option<Scalar>, set: &[u64],
+pub fn gen_proof_of_set_membership<R: RngCore + CryptoRng>(value: Scalar, randomness: Option<Scalar>, set: &[Scalar],
                                                         mut rng: &mut R, transcript_label: &'static [u8],
                                                         pc_gens: &PedersenGens, bp_gens: &BulletproofGens) -> Result<(R1CSProof, Vec<CompressedRistretto>), R1CSError> {
     let set_length = set.len();
@@ -120,7 +120,7 @@ pub fn gen_proof_of_set_membership<R: RngCore + CryptoRng>(value: u64, randomnes
     assert!(vector_sum_gadget(&mut prover, &bit_vars, 1).is_ok());
 
     let (com_value, var_value) = prover.commit(value.into(), randomness.unwrap_or_else(|| Scalar::random(&mut rng)));
-    let quantity_value = AllocatedQuantity {
+    let quantity_value = AllocatedScalar {
         variable: var_value,
         assignment: Some(value),
     };
@@ -134,7 +134,7 @@ pub fn gen_proof_of_set_membership<R: RngCore + CryptoRng>(value: u64, randomnes
     Ok((proof, comms))
 }
 
-pub fn verify_proof_of_set_membership(set: &[u64],
+pub fn verify_proof_of_set_membership(set: &[Scalar],
                                    proof: R1CSProof, commitments: Vec<CompressedRistretto>,
                                    transcript_label: &'static [u8], pc_gens: &PedersenGens, bp_gens: &BulletproofGens) -> Result<(), R1CSError> {
     let set_length = set.len();
@@ -156,7 +156,7 @@ pub fn verify_proof_of_set_membership(set: &[u64],
     assert!(vector_sum_gadget(&mut verifier, &bit_vars, 1).is_ok());
 
     let var_val = verifier.commit(commitments[set_length]);
-    let quantity_value = AllocatedQuantity {
+    let quantity_value = AllocatedScalar {
         variable: var_val,
         assignment: None,
     };
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn set_membership_check_gadget() {
-        let set: Vec<u64> = vec![2, 3, 5, 6, 8, 20, 25];
+        let set : Vec<_> = vec![2_u64, 3, 5, 6, 8, 20, 25].into_iter().map(Scalar::from).collect();
         let value = 3u64;
         let mut rng = rand::thread_rng();
 
@@ -183,7 +183,7 @@ mod tests {
         let bp_gens = BulletproofGens::new(128, 1);
         let label= b"SetMemebershipTest";
         let randomness = Some(Scalar::random(&mut rng));
-        let (proof, commitments) = gen_proof_of_set_membership(value, randomness, &set, &mut rng, label, &pc_gens, &bp_gens).unwrap();
+        let (proof, commitments) = gen_proof_of_set_membership(value.into(), randomness, &set, &mut rng, label, &pc_gens, &bp_gens).unwrap();
         verify_proof_of_set_membership(&set, proof, commitments, label, &pc_gens, &bp_gens).unwrap();
     }
 }
