@@ -1,4 +1,4 @@
-use crate::ecdsa::Signature;
+use crate::ecdsa::{PublicKey, Signature};
 use crate::gadget::gadget_set_membership::{
     gen_proof_of_set_membership, verify_proof_of_set_membership,
 };
@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub const ELECTION: &'static [u8] = b"Election";
-
+#[derive(Clone)]
 pub struct Election {
     voters: Vec<Scalar>,
     options: Vec<String>,
@@ -22,10 +22,11 @@ pub struct Election {
     pc_gens: PedersenGens,
     bp_gens: BulletproofGens,
     invalidate: HashSet<H256>,
+    pub(crate) creator: PublicKey,
 }
 
 impl Election {
-    pub fn new(voters: Vec<H256>, options: Vec<String>) -> Self {
+    pub fn new(voters: Vec<H256>, options: Vec<String>, creator: PublicKey) -> Self {
         let mut rng = rand::thread_rng();
         let voters: Vec<_> = voters
             .into_iter()
@@ -45,6 +46,7 @@ impl Election {
             pc_gens,
             bp_gens,
             invalidate: Default::default(),
+            creator,
         }
     }
 
@@ -122,16 +124,17 @@ impl Election {
     }
 }
 
+#[derive(Clone)]
 pub struct Ballot {
     votes: HashSet<Vote>,
 }
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VoterID {
     proof: R1CSProof,
     commitments: Vec<CompressedRistretto>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Hash, PartialOrd, PartialEq, Ord, Eq)]
+#[derive(Serialize, Deserialize, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Clone)]
 pub struct Vote {
     candidate: usize,
     voter_id: H256,
@@ -155,6 +158,7 @@ mod test {
         let mut rng = rand::thread_rng();
         let alice = Keypair::generate(&mut rng);
         let bob = Keypair::generate(&mut rng);
+        let kwaku = Keypair::generate(&mut rng);
 
         let mut election = Election::new(
             vec![
@@ -167,6 +171,7 @@ mod test {
                 H256::from([5; 32]),
             ],
             vec!["Elon".to_string(), "Bill".to_string(), "Bezos".to_string()],
+            kwaku.public
         );
 
         let voter_id = election
@@ -174,7 +179,6 @@ mod test {
             .unwrap();
 
         election.vote(0, voter_id).unwrap();
-
 
         println!("{:?}", election.get_results());
     }

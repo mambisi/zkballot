@@ -72,6 +72,10 @@ impl SecretKey {
         secret_key
     }
 
+    pub fn hash(&self) -> H256 {
+        H256::from(self.to_bytes())
+    }
+
     pub fn public(&self) -> PublicKey {
         PublicKey {
             inner: self.inner.verifying_key(),
