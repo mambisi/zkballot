@@ -1,0 +1,137 @@
+openapi: 3.0.1
+info:
+  title: Election Service
+  version: '1.0'
+
+servers:
+  - url: http://{host}:{port}/
+    description: The default server
+
+paths:
+  /new_election:
+    post:
+      summary: Creates a new election
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignedElectionData'
+      responses:
+        '200':
+          description: Election created successfully
+        '400':
+          description: Invalid request body
+
+  /{id}/stop:
+    post:
+      summary: Stops an election
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignatureData'
+      responses:
+        '200':
+          description: Election stopped successfully
+        '400':
+          description: Invalid request body
+        '404':
+          description: Election not found
+
+  /{id}/vote:
+    post:
+      summary: Casts a vote in an election
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteInput'
+      responses:
+        '200':
+          description: Vote cast successfully
+        '400':
+          description: Invalid request body
+        '404':
+          description: Election not found
+
+  /{id}/results:
+    get:
+      summary: Gets the results of a completed election
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Election results retrieved successfully
+        '404':
+          description: Election not found
+
+  /{id}/voter_id:
+    post:
+      summary: Get the voter ID for a particular signature
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignatureData'
+      responses:
+        '200':
+          description: Voter ID retrieved successfully
+        '400':
+          description: Invalid request body
+        '404':
+          description: Election not found
+
+components:
+  schemas:
+    SignedElectionData:
+      type: object
+      properties:
+        election_data:
+          $ref: '#/components/schemas/ElectionData'
+        signature:
+          type: string
+    ElectionData:
+      type: object
+      properties:
+        voters:
+          type: array
+          items:
+            type: string
+        options:
+          type: array
+          items:
+            type: string
+    SignatureData:
+      type: object
+      properties:
+        signature:
+          type: string
+    VoteInput:
+      type: object
+      properties:
+        candidate:
+          type: integer
+        voter_id:
+          type: string

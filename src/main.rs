@@ -74,7 +74,6 @@ fn main() -> std::io::Result<()> {
         Command::Run(run) => {
             // run the server
             run_sever(run.host, run.port)?;
-            println!("Running server on host {} and port {}", run.host, run.port);
         }
         Command::Sign(sign) => {
             // sign the message
